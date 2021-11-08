@@ -64,7 +64,7 @@ public class EmployeeService {
                 .map (employee -> {
                     var score = reportDefinition.getUseExprienceMultiplier ()
                             ?
-                            employee.getTotalSales () / (employee.getSalesPeriod () * employee.getExperienceMultiplier ())
+                            employee.getTotalSales () / employee.getSalesPeriod () * employee.getExperienceMultiplier ()
                             :
                             employee.getTotalSales () / employee.getSalesPeriod ();
 
