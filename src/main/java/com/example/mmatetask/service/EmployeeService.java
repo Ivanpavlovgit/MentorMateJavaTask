@@ -19,8 +19,6 @@ import java.util.stream.Collectors;
 @Service
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
-    private static final String EMPLOYEE_FILE_PATH = "src/main/resources/files/employees.json";
-    private static final String REPORT_DEFINITION_FILE_PATH = "src/main/resources/files/reportDefinition.json";
     private static final String REPORT_AS_CSV_FILE_PATH = "src/main/resources/files/report.csv";
     private final Gson gson;
     private final ModelMapper modelMapper;
@@ -33,21 +31,21 @@ public class EmployeeService {
         this.csvWriter = new CSVWriter (new FileWriter (REPORT_AS_CSV_FILE_PATH));
     }
 
-    public void seedEmployees () throws IOException {
+    public void seedEmployees (String filePath) throws IOException {
 
         var stream = Arrays.stream (this.gson
                 .fromJson (Files
-                        .readString (Path.of (EMPLOYEE_FILE_PATH)),EmployeeSeedDto[].class)).collect (Collectors.toUnmodifiableList ());
+                        .readString (Path.of (filePath)),EmployeeSeedDto[].class)).collect (Collectors.toUnmodifiableList ());
 
         var mapped = stream.stream ().map (employeeSeedDto -> this.modelMapper.map (employeeSeedDto,Employee.class)).collect (Collectors.toUnmodifiableList ());
         this.employeeRepository.saveAll (mapped);
         System.out.printf ("%d employee records saved.%n",mapped.size ());
     }
 
-    public ReportDefinition readReportDefinition () throws IOException {
+    public ReportDefinition readReportDefinition (String reportDefinitionFilePath) throws IOException {
         var reportDefinition = this.gson
                 .fromJson (Files
-                        .readString (Path.of (REPORT_DEFINITION_FILE_PATH)),ReportDefinition.class);
+                        .readString (Path.of (reportDefinitionFilePath)),ReportDefinition.class);
 
 
         System.out.printf ("Imported Report Definition : %n - Top performers Threshold : %d%n - Use experience multiplier : %s%n - Period limit: %d%n"
@@ -61,7 +59,7 @@ public class EmployeeService {
         var periodLimit                      = reportDefinition.getPeriodLimit ();
         var numberOfEmployeeRecordsForReport =(reportDefinition.getTopPerformersThreshold () * this.employeeRepository.count () / 100);
         var allEmployees                     = this.employeeRepository.findAllEligibleForReport (periodLimit);
-        System.out.println ("mm");
+
         var employeeResult = allEmployees.stream ()
                 .map (employee -> {
                     var score = reportDefinition.getUseExprienceMultiplier ()
@@ -73,11 +71,15 @@ public class EmployeeService {
                     return new String[]{employee.getName (),String.format ("%.1f",score)};
                 }).limit ( numberOfEmployeeRecordsForReport)
                 .collect (Collectors.toUnmodifiableList ());
+
+
         String[] header1 = {"Result"};
         csvWriter.writeNext (header1,false);
         String[] header2 = {"Name","Score"};
         csvWriter.writeNext (header2,false);
         csvWriter.writeAll (employeeResult,false);
         csvWriter.close ();
+        System.out.printf ("Successfully generated report containing %d records.%n",employeeResult.size ());
+        System.out.println ("You can find the report in \"src/main/resources/files/\" named \"report.csv\".");
     }
 }
