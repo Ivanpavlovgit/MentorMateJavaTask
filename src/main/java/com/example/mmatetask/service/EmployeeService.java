@@ -5,6 +5,7 @@ import com.example.mmatetask.model.dto.EmployeeSeedDto;
 import com.example.mmatetask.model.entity.Employee;
 import com.example.mmatetask.repository.EmployeeRepository;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.opencsv.CSVWriter;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,13 @@ public class EmployeeService {
     private final ModelMapper modelMapper;
     private final CSVWriter csvWriter;
 
-    public EmployeeService (EmployeeRepository employeeRepository,Gson gson,ModelMapper modelMapper) throws IOException {
+    public EmployeeService (EmployeeRepository employeeRepository) throws IOException {
         this.employeeRepository = employeeRepository;
-        this.gson = gson;
-        this.modelMapper = modelMapper;
+        this.gson = new GsonBuilder ()
+                .excludeFieldsWithoutExposeAnnotation ()
+                .setPrettyPrinting ()
+                .create ();
+        this.modelMapper = new ModelMapper ();
         this.csvWriter = new CSVWriter (new FileWriter (REPORT_AS_CSV_FILE_PATH));
     }
 
@@ -57,7 +61,7 @@ public class EmployeeService {
 
     public void generateReportAsCSV (ReportDefinition reportDefinition) throws IOException {
         var periodLimit                      = reportDefinition.getPeriodLimit ();
-        var numberOfEmployeeRecordsForReport =(reportDefinition.getTopPerformersThreshold () * this.employeeRepository.count () / 100);
+        var numberOfEmployeeRecordsForReport = (reportDefinition.getTopPerformersThreshold () * this.employeeRepository.count () / 100);
         var allEmployees                     = this.employeeRepository.findAllEligibleForReport (periodLimit);
 
         var employeeResult = allEmployees.stream ()
@@ -69,7 +73,7 @@ public class EmployeeService {
                             employee.getTotalSales () / employee.getSalesPeriod ();
 
                     return new String[]{employee.getName (),String.format ("%.1f",score)};
-                }).limit ( numberOfEmployeeRecordsForReport)
+                }).limit (numberOfEmployeeRecordsForReport)
                 .collect (Collectors.toUnmodifiableList ());
 
 

@@ -1,14 +1,15 @@
 package com.example.mmatetask.model.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 
 @Entity
 @Table(name="employees")
-public class Employee extends BaseEntity {
+public class Employee{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     @NotBlank
     @Column(name="name")
     private String name;
