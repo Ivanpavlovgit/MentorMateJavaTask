@@ -24,12 +24,13 @@ public class CommandLineRunnerImpl implements CommandLineRunner {
     @Override
     public void run (String... args) throws Exception {
         System.out.println ("Hello !");
+
         System.out.println ("Please enter the path to Employee data JSON file");
-        var jsonFilePath = reader.readLine ().trim ();
-        seedEmployees (jsonFilePath);
+        var EmployeeJsonFilePath = reader.readLine ().trim ();
+        seedEmployees (EmployeeJsonFilePath);
+
         System.out.println ("Please enter the path to report definition JSON file");
         var reportDefinitionFilePath = reader.readLine ().trim ();
-
         writeReportAsCSV (readReportDefinition (reportDefinitionFilePath));
 
 

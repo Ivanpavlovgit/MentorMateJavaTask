@@ -37,13 +37,14 @@ public class EmployeeService {
 
     public void seedEmployees (String filePath) throws IOException {
 
-        var stream = Arrays.stream (this.gson
+        var employeeSeedDtoList = Arrays.stream (this.gson
                 .fromJson (Files
                         .readString (Path.of (filePath)),EmployeeSeedDto[].class)).collect (Collectors.toUnmodifiableList ());
 
-        var mapped = stream.stream ().map (employeeSeedDto -> this.modelMapper.map (employeeSeedDto,Employee.class)).collect (Collectors.toUnmodifiableList ());
-        this.employeeRepository.saveAll (mapped);
-        System.out.printf ("%d employee records saved.%n",mapped.size ());
+        var employeeList = employeeSeedDtoList.stream ().map (employeeSeedDto -> this.modelMapper.map (employeeSeedDto,Employee.class)).collect (Collectors.toUnmodifiableList ());
+        this.employeeRepository.saveAll (employeeList);
+
+        System.out.printf ("%d employee records saved.%n",employeeList.size ());
     }
 
     public ReportDefinition readReportDefinition (String reportDefinitionFilePath) throws IOException {
@@ -56,15 +57,16 @@ public class EmployeeService {
                 ,reportDefinition.getTopPerformersThreshold ()
                 ,reportDefinition.getUseExprienceMultiplier ()
                 ,reportDefinition.getPeriodLimit ());
+
         return reportDefinition;
     }
 
     public void generateReportAsCSV (ReportDefinition reportDefinition) throws IOException {
         var periodLimit                      = reportDefinition.getPeriodLimit ();
         var numberOfEmployeeRecordsForReport = (reportDefinition.getTopPerformersThreshold () * this.employeeRepository.count () / 100);
-        var allEmployees                     = this.employeeRepository.findAllEligibleForReport (periodLimit);
+        var employeeListForReport                     = this.employeeRepository.findAllEligibleForReport (periodLimit);
 
-        var employeeResult = allEmployees.stream ()
+        var reportContent = employeeListForReport.stream ()
                 .map (employee -> {
                     var score = reportDefinition.getUseExprienceMultiplier ()
                             ?
@@ -79,11 +81,15 @@ public class EmployeeService {
 
         String[] header1 = {"Result"};
         csvWriter.writeNext (header1,false);
+
         String[] header2 = {"Name","Score"};
         csvWriter.writeNext (header2,false);
-        csvWriter.writeAll (employeeResult,false);
+
+        csvWriter.writeAll (reportContent,false);
+
         csvWriter.close ();
-        System.out.printf ("Successfully generated report containing %d records.%n",employeeResult.size ());
+
+        System.out.printf ("Successfully generated report containing %d records.%n",reportContent.size ());
         System.out.println ("You can find the report in \"src/main/resources/files/\" named \"report.csv\".");
     }
 }
